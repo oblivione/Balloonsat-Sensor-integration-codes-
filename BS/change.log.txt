@@ -1,0 +1,28 @@
+----counts_to_update_GPS_DATA  // compare to greater thn 2
+
+
+----watchdow window > 2 times
+
+----print to println for packet data
+
+
+---fill return withh true or false at else conditions in getGPSdata method ---> Very very important
+
+
+---compare millis() with unsigned long not unsigned int // Very very important for stability
+
+---initialise GPS_DTA_RAW and GPS_DATA and counts_to_update_GPS_DATA and all things to innitialize at the top of BSsendPacket
+
+-- Add CRLF to GPS_DATA_RAW 
+
+
+--- error handling in IMUsensor1() and IMUsensor2()
+	// error was not handled as IMU() was being called 
+	//before if(detectimusensors()==4) and before was 
+	// only checking whether to send 		//StringsIMUsensor1/IMUsensor2 or to send error while 
+//actually the problem was IMU() will hang if SD/SCL cables are removed and this checking done in  if(detectimusensors()==4)
+which actually followed IMU() instead of being called before 
+IMU() was called --> now corrected .
+
+
+9/7/14  : changed the ONE_WIRE_BUS define in BS_TEMP.h from 2 to 6

@@ -1,0 +1,128 @@
+/*
+	ISAgps Library
+
+	Returns GPS data in a custom data format
+	GPS module's Tx pin connected to Rx pin of Arduino
+
+	The circuit:
+	* GPS module supporting NMEA protocol to Rx pin of arduino
+
+	Modified 20th May 2014
+	By ISAsense
+*/
+#include "Arduino.h"
+
+
+
+NMEA nmeagps(ALL); 
+
+// -- This borrows very heavily from one of Maarten Lamers' 
+// examples on how to use his NMEA library.
+#define  GPS_MsgID          0
+#define  GGA_TIME           1
+#define  GGA_LATI           2
+#define  GGA_LONG           4      
+#define  GGA_ALTI           9
+#define  RMC_SPEED          7
+
+
+String GPS_DATA_RAW;
+String  GPS_DATA;
+String  GPS_time;
+String  GPS_latitude;
+String  GPS_longitude;
+String  GPS_altitude;
+String  GPS_speed;
+String  GPS_start_id = "$";
+String  GPS_stop_id = "#";
+String  GPS_time_id = "TIME";
+String  GPS_latitude_id = "LATI";
+String  GPS_longitude_id = "LONG";
+String  GPS_altitude_id = "ALTI";
+String  GPS_speed_id = "SPEED";
+
+
+
+String  GPS_value_separator = "=";  // separates the item from its value
+String  GPS_item_separator = ":" ;   // separates two items
+
+int counts_to_update_GPS_DATA=0; // used to count until we are ready to update GPS_DATA
+class GPS
+{
+  public:
+boolean getGPSdata();     
+};
+
+
+
+boolean GPS::getGPSdata()
+{
+  // If there's anything to read from the serial port
+    if (Serial.available())
+    {
+      
+    
+      
+       // We pass the data into the nmea decoder by calling
+       // decode(). This function accumulates the bytes until
+       // a valid NMEA sentence has been read. If a sentence has 
+       // been read it returns true.
+				   if (nmeagps.decode(Serial.read()))
+				   {
+
+
+							GPS_DATA_RAW  = GPS_DATA_RAW + nmeagps.sentence() + "\r\n";		
+							//Very Imp -  CRLF added at last so as to account for thr lost CRLF of original nmea-0183 data format during decoding //
+							// If CRLF is not added other gps decoders like googleearth , Goops , Earthbridge and GPSgate will not be able to parse the GPS data
+
+
+							 if(strcmp(nmeagps.term(GPS_MsgID),"GPGGA")==0)
+								 {
+								   //Serial.println(nmeagps.term(GPS_MsgID));
+									 counts_to_update_GPS_DATA++;
+									 
+									 GPS_time=String(nmeagps.term(GGA_TIME));
+									 GPS_latitude=String(nmeagps.term(GGA_LATI));
+									 GPS_longitude=String(nmeagps.term(GGA_LONG));
+									 GPS_altitude=String(nmeagps.term(GGA_ALTI));
+								 }
+							 else if(strcmp(nmeagps.term(GPS_MsgID),"GPRMC")==0)
+								 {
+								   //Serial.println(nmeagps.term(GPS_MsgID));
+									counts_to_update_GPS_DATA++;
+									
+									GPS_speed=String(nmeagps.term(RMC_SPEED));
+								 }
+							 
+							 
+							 if(counts_to_update_GPS_DATA>=2)
+								   {
+									 counts_to_update_GPS_DATA=0; // reinitialise to count for next update
+									 
+									 
+									   GPS_DATA =  GPS_start_id
+							 
+												  + GPS_time_id       + GPS_value_separator+    GPS_time          + GPS_item_separator
+												  + GPS_latitude_id   + GPS_value_separator+    GPS_latitude      + GPS_item_separator 
+												  + GPS_longitude_id  + GPS_value_separator+    GPS_longitude     + GPS_item_separator
+												  + GPS_altitude_id   + GPS_value_separator+    GPS_altitude      + GPS_item_separator
+												  + GPS_speed_id      + GPS_value_separator+    GPS_speed         
+										
+												  + GPS_stop_id;  
+										  
+										  
+										  return true;        
+								 }       
+						   
+							else return false;
+				
+					 
+				   }
+
+				else return false;
+	
+		}
+
+	else return false;	
+}
+
